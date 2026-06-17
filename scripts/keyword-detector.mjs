@@ -29,6 +29,7 @@ import { homedir } from 'os';
 import { fileURLToPath } from 'url';
 import { getClaudeConfigDir } from './lib/config-dir.mjs';
 import { atomicWriteFileSync } from './lib/atomic-write.mjs';
+import { resolveTriggerRegex } from './lib/magic-keywords-config.mjs';
 import { readStdin } from './lib/stdin.mjs';
 import { resolveOmcStateRoot } from './lib/state-root.mjs';
 
@@ -1195,7 +1196,7 @@ async function main() {
     // Ultrapilot keywords removed — routed to team which is now explicit-only (/team).
 
     // Ultrawork keywords
-    if (hasActionableKeyword(cleanPrompt, /\b(ultrawork|ulw|uw)\b|(울트라워크)|(ウルトラワーク)/i)) {
+    if (hasActionableKeyword(cleanPrompt, resolveTriggerRegex('ultrawork', /\b(ultrawork|ulw|uw)\b|(울트라워크)|(ウルトラワーク)/i, directory))) {
       matches.push({ name: 'ultrawork', args: '' });
     }
 
@@ -1242,19 +1243,19 @@ async function main() {
     }
 
     // Ultrathink keywords
-    if (hasActionableKeyword(cleanPrompt, /\b(ultrathink|think hard|think deeply)\b|(울트라씽크)|(ウルトラシンク)/i)) {
+    if (hasActionableKeyword(cleanPrompt, resolveTriggerRegex('ultrathink', /\b(ultrathink|think hard|think deeply)\b|(울트라씽크)|(ウルトラシンク)/i, directory))) {
       matches.push({ name: 'ultrathink', args: '' });
     }
 
     // Deepsearch keywords
-    if (hasActionableKeyword(cleanPrompt, /\b(deepsearch)\b|(딥\s?서치)|(ディープ\s?サーチ)/i) ||
+    if (hasActionableKeyword(cleanPrompt, resolveTriggerRegex('deepsearch', /\b(deepsearch)\b|(딥\s?서치)|(ディープ\s?サーチ)/i, directory)) ||
         hasActionableKeyword(cleanPrompt, /\bsearch\s+(the\s+)?(codebase|code|files?|project)\b/i) ||
         hasActionableKeyword(cleanPrompt, /\bfind\s+(in\s+)?(codebase|code|all\s+files?)\b/i)) {
       matches.push({ name: 'deepsearch', args: '' });
     }
 
     // Analyze keywords
-    if (hasActionableKeyword(cleanPrompt, /\b(deep[\s-]?analyze|deepanalyze)\b|(딥\s?분석)|(ディープ\s?アナライズ)/i)) {
+    if (hasActionableKeyword(cleanPrompt, resolveTriggerRegex('analyze', /\b(deep[\s-]?analyze|deepanalyze)\b|(딥\s?분석)|(ディープ\s?アナライズ)/i, directory))) {
       matches.push({ name: 'analyze', args: '' });
     }
 
