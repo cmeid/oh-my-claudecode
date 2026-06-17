@@ -38,6 +38,42 @@ function getRalplanStatePath(cwd: string, sessionId: string) {
   return join(cwd, '.omc', 'state', 'sessions', sessionId, 'ralplan-state.json');
 }
 
+describe('keyword-detector.mjs configurable triggers (magicKeywords)', () => {
+  function ctx(prompt: string, cwd: string) {
+    return runKeywordDetector(prompt, cwd).hookSpecificOutput?.additionalContext ?? '';
+  }
+
+  it('honors a magicKeywords.ultrawork override: new word fires, defaults cede', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'kw-cfg-'));
+    mkdirSync(join(cwd, '.claude'), { recursive: true });
+    writeFileSync(
+      join(cwd, '.claude', 'omc.jsonc'),
+      JSON.stringify({ magicKeywords: { ultrawork: ['raging', 'raging-parallelism'] } }),
+    );
+    try {
+      // Configured words now trigger the ultrawork mode...
+      expect(ctx('raging refactor the parser', cwd)).toContain('[MAGIC KEYWORD: ULTRAWORK]');
+      expect(ctx('raging-parallelism the migration', cwd)).toContain('[MAGIC KEYWORD: ULTRAWORK]');
+      // ...and the built-in defaults no longer do (replace semantics).
+      expect(ctx('ulw refactor the parser', cwd)).not.toContain('[MAGIC KEYWORD: ULTRAWORK]');
+      expect(ctx('ultrawork refactor the parser', cwd)).not.toContain('[MAGIC KEYWORD: ULTRAWORK]');
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it('falls back to built-in triggers when no override is configured', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'kw-nocfg-'));
+    try {
+      expect(ctx('ultrawork refactor the parser', cwd)).toContain('[MAGIC KEYWORD: ULTRAWORK]');
+      expect(ctx('ulw refactor the parser', cwd)).toContain('[MAGIC KEYWORD: ULTRAWORK]');
+      expect(ctx('raging refactor the parser', cwd)).not.toContain('[MAGIC KEYWORD: ULTRAWORK]');
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('keyword-detector.mjs mode-message dispatch', () => {
   it('injects search mode for deepsearch without emitting a magic skill invocation', () => {
     const output = runKeywordDetector('deepsearch the codebase for keyword dispatch');
